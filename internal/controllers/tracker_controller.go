@@ -98,8 +98,8 @@ func (c *TrackerController) CreateTracker(ctx *gin.Context) {
 		db.Tracker.Emotion.Link(
 			db.Emotion.ID.Equals(input.EmotionID),
 		),
+		db.Tracker.Description.Set(input.Description),
 	)
-
 	tracker, err := create.Exec(c.service.Ctx)
 	if err != nil {
 		utils.ErrorResponse(ctx, 500, "Failed to create tracker", err)

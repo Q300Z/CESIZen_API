@@ -87,6 +87,7 @@ func (c *ArticleController) CreateArticle(ctx *gin.Context) {
 		db.Article.User.Link(
 			db.User.ID.Equals(input.UserID),
 		),
+		db.Article.Description.Set(input.Description),
 	).Exec(c.service.Ctx)
 
 	if err != nil {
