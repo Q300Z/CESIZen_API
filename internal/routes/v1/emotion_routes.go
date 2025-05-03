@@ -18,4 +18,7 @@ func AddEmotionRoutes(rg *gin.RouterGroup, serviceManager *services.ServiceManag
 	rg.PUT("/emotions/:id", controller.UpdateEmotion)
 	rg.DELETE("/emotions/:id", controller.DeleteEmotion)
 
+	rg.GET("/emotions/base", controller.GetEmotionBases)
+	rg.PUT("/emotions/base/:id", controller.UpdateEmotionBase)
+	rg.DELETE("/emotions/base/:id", controller.DeleteEmotionBase)
 }

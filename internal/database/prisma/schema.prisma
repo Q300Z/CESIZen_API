@@ -34,7 +34,6 @@ model User {
 
 model Tracker {
   id          Int      @id @default(autoincrement())
-  date        DateTime
   description String?
   createAt    DateTime @default(now())
   updateAt    DateTime @updatedAt
@@ -43,13 +42,13 @@ model Tracker {
   user   User @relation(fields: [userID], references: [id])
   userID Int
 
-  emotion   Emotion? @relation(fields: [emotionID], references: [id])
-  emotionID Int?
+  emotion   Emotion @relation(fields: [emotionID], references: [id])
+  emotionID Int
 }
 
 model EmotionBase {
   id   Int    @id @default(autoincrement())
-  name String
+  name String @unique
 
   // Relations
   emotions Emotion[]
@@ -57,10 +56,10 @@ model EmotionBase {
 
 model Emotion {
   id   Int    @id @default(autoincrement())
-  name String
+  name String @unique
 
   // Relations
-  emotionBase   EmotionBase @relation(fields: [emotionBaseID], references: [id])
+  emotionBase   EmotionBase @relation(fields: [emotionBaseID], references: [id], onDelete: Cascade, onUpdate: Cascade)
   emotionBaseID Int
 
   trackers Tracker[]
