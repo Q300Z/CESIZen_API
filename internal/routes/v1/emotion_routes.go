@@ -2,6 +2,7 @@ package v1
 
 import (
 	"cesizen/api/internal/controllers"
+	"cesizen/api/internal/middlewares"
 	"cesizen/api/internal/services"
 
 	"github.com/gin-gonic/gin"
@@ -11,14 +12,14 @@ func AddEmotionRoutes(rg *gin.RouterGroup, serviceManager *services.ServiceManag
 
 	controller := controllers.NewEmotionController(serviceManager)
 
-	rg.GET("/emotions", controller.GetEmotions)
-	rg.GET("/emotions/:id", controller.GetEmotion)
-	rg.GET("/emotions/search", controller.Search)
-	rg.POST("/emotions", controller.CreateEmotion)
-	rg.PUT("/emotions/:id", controller.UpdateEmotion)
-	rg.DELETE("/emotions/:id", controller.DeleteEmotion)
+	rg.GET("/emotions", middlewares.Authentification, controller.GetEmotions)
+	rg.GET("/emotions/:id", middlewares.Authentification, controller.GetEmotion)
+	rg.GET("/emotions/search", middlewares.Authentification, controller.Search)
+	rg.POST("/emotions", middlewares.Authentification, middlewares.Authorization, controller.CreateEmotion)
+	rg.PUT("/emotions/:id", middlewares.Authentification, middlewares.Authorization, controller.UpdateEmotion)
+	rg.DELETE("/emotions/:id", middlewares.Authentification, middlewares.Authorization, controller.DeleteEmotion)
 
-	rg.GET("/emotions/base", controller.GetEmotionBases)
-	rg.PUT("/emotions/base/:id", controller.UpdateEmotionBase)
-	rg.DELETE("/emotions/base/:id", controller.DeleteEmotionBase)
+	rg.GET("/emotions/base", middlewares.Authentification, controller.GetEmotionBases)
+	rg.PUT("/emotions/base/:id", middlewares.Authentification, middlewares.Authorization, controller.UpdateEmotionBase)
+	rg.DELETE("/emotions/base/:id", middlewares.Authentification, middlewares.Authorization, controller.DeleteEmotionBase)
 }
