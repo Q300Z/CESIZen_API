@@ -120,9 +120,9 @@ func (c *ArticleController) UpdateArticle(ctx *gin.Context) {
 	update := c.service.Client.Article.FindUnique(
 		db.Article.ID.Equals(id),
 	).Update(
-		db.Article.Title.Set(*input.Title),
-		db.Article.Description.Set(*input.Description),
-		db.Article.Content.Set(*input.Content),
+		db.Article.Title.SetIfPresent(input.Title),
+		db.Article.Description.SetIfPresent(input.Description),
+		db.Article.Content.SetIfPresent(input.Content),
 	)
 
 	article, err := update.Exec(c.service.Ctx)

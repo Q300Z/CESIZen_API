@@ -20,7 +20,8 @@
 			"Prisma.prisma",
 			"alexcvzz.vscode-sqlite",
 			"tamasfe.even-better-toml",
-			"cweijan.vscode-postgresql-client2"
+			"cweijan.vscode-postgresql-client2",
+			"mhutchie.git-graph"
 		]
 	}
   }
