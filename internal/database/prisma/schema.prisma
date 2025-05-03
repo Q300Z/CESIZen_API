@@ -1,0 +1,80 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "go run github.com/steebchen/prisma-client-go"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  user
+  admin
+}
+
+model User {
+  id       Int      @id @default(autoincrement())
+  name     String
+  email    String   @unique
+  password String
+  role     Role @default(user)
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  // Relations
+  trackers Tracker[]
+  articles Article[]
+}
+
+model Tracker {
+  id          Int      @id @default(autoincrement())
+  date        DateTime
+  description String?
+  createAt    DateTime @default(now())
+  updateAt    DateTime @updatedAt
+
+  // Relations
+  user   User @relation(fields: [userID], references: [id])
+  userID Int
+
+  emotion   Emotion? @relation(fields: [emotionID], references: [id])
+  emotionID Int?
+}
+
+model EmotionBase {
+  id   Int    @id @default(autoincrement())
+  name String
+
+  // Relations
+  emotions Emotion[]
+}
+
+model Emotion {
+  id   Int    @id @default(autoincrement())
+  name String
+
+  // Relations
+  emotionBase   EmotionBase @relation(fields: [emotionBaseID], references: [id])
+  emotionBaseID Int
+
+  trackers Tracker[]
+}
+
+model Article {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  content     String
+  createAt    DateTime @default(now())
+  updateAt    DateTime @updatedAt
+
+  // Relations
+  user   User @relation(fields: [userID], references: [id])
+  userID Int
+}

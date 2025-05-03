@@ -5,9 +5,9 @@
 		"dockerfile": "Dockerfile"
 	},
   // Features to add to the dev container. More info: https://containers.dev/features.
-  //"features": {
-  //  "ghcr.io/devcontainers/features/docker-in-docker:2": {}
-  //},
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
   "customizations" : {
     "jetbrains" : {
       "backend" : "Goland"
@@ -16,7 +16,11 @@
 		"extensions": [
 			"GitHub.copilot",
 			"GitHub.copilot-chat",
-			"golang.Go"
+			"golang.Go",
+			"Prisma.prisma",
+			"alexcvzz.vscode-sqlite",
+			"tamasfe.even-better-toml",
+			"cweijan.vscode-postgresql-client2"
 		]
 	}
   }
