@@ -19,11 +19,11 @@ var JWTSecret = []byte("your_secret_key")
 func GenerateJWT(user *db.UserModel) (string, error) {
 	// Définir les claims (données contenues dans le token).
 	claims := jwt.MapClaims{
-		"userID":   user.ID,                               // Ajouter l'ID utilisateur
-		"username": user.Name,                             // Ajouter le nom d'utilisateur
-		"role":     user.Role,                             // Ajouter le rôle de l'utilisateur
-		"exp":      time.Now().Add(time.Hour * 48).Unix(), // Date d'expiration
-		"iat":      time.Now().Unix(),                     // Date d'émission
+		"userID": user.ID,                               // Ajouter l'ID utilisateur
+		"email":  user.Email,                            // Ajouter le mail de l'utilisateur
+		"role":   user.Role,                             // Ajouter le rôle de l'utilisateur
+		"exp":    time.Now().Add(time.Hour * 48).Unix(), // Date d'expiration
+		"iat":    time.Now().Unix(),                     // Date d'émission
 	}
 
 	// Créer un nouveau token signé.
@@ -56,21 +56,21 @@ func ParseJWT(token string) (models.JWTClaims, error) {
 	// Vérification des claims et de la validité du token
 	if claims, ok := parsedToken.Claims.(jwt.MapClaims); ok && parsedToken.Valid {
 		userIDFloat, userIDExists := claims["userID"].(float64) // JWT stocke les nombres en `float64`
-		username, usernameExists := claims["username"].(string)
+		email, emailExists := claims["email"].(string)
 		role, roleExists := claims["role"].(string)
 		expFloat, expExists := claims["exp"].(float64)
 		iatFloat, iatExists := claims["iat"].(float64)
 
-		if !userIDExists || !usernameExists || !roleExists || !expExists || !iatExists {
+		if !userIDExists || !emailExists || !roleExists || !expExists || !iatExists {
 			return models.JWTClaims{}, fmt.Errorf("token invalid")
 		}
 
 		return models.JWTClaims{
-			UserID:   uint(userIDFloat),
-			Username: username,
-			Role:     role,
-			Exp:      int64(expFloat),
-			Iat:      int64(iatFloat),
+			UserID: uint(userIDFloat),
+			Email:  email,
+			Role:   role,
+			Exp:    int64(expFloat),
+			Iat:    int64(iatFloat),
 		}, nil
 	}
 	// Token invalide

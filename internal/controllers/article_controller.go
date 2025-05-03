@@ -28,7 +28,7 @@ func (c *ArticleController) GetArticles(ctx *gin.Context) {
 	utils.SuccessResponse(ctx, "Articles fetched successfully", articles)
 }
 
-// GET /articles/:id
+// GET /article/:id
 func (c *ArticleController) GetArticle(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.Atoi(idStr)
@@ -67,13 +67,13 @@ func (c *ArticleController) Search(ctx *gin.Context) {
 	utils.SuccessResponse(ctx, "Search results", articles)
 }
 
-// POST /articles
+// POST /article
 func (c *ArticleController) CreateArticle(ctx *gin.Context) {
 	var input struct {
 		Title       string `json:"title" binding:"required"`
 		Description string `json:"description"`
 		Content     string `json:"content" binding:"required"`
-		UserID      int    `json:"user_id" binding:"required"`
+		UserID      int    `json:"userId" binding:"required"`
 	}
 
 	if err := ctx.ShouldBindJSON(&input); err != nil {

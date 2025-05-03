@@ -17,12 +17,6 @@ func NewServiceManager() *ServiceManager {
 		panic(err)
 	}
 
-	defer func() {
-		if err := client.Prisma.Disconnect(); err != nil {
-			panic(err)
-		}
-	}()
-
 	// Initialisation du contexte
 	ctx := context.Background()
 

@@ -12,7 +12,6 @@ func GetRoutes(r *gin.Engine, serviceManager *services.ServiceManager) {
 	v1.AddArticleRoutes(v1Group, serviceManager)
 	v1.AddAuthRoutes(v1Group, serviceManager)
 	v1.AddEmotionRoutes(v1Group, serviceManager)
-	v1.AddRoleRoutes(v1Group, serviceManager)
 	v1.AddTrackerRoutes(v1Group, serviceManager)
 	v1.AddUserRoutes(v1Group, serviceManager)
 }

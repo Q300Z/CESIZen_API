@@ -130,11 +130,63 @@ func (c *AuthController) Register(ctx *gin.Context) {
 	ctx.SetCookie("token", token, 3600, "/", "localhost", false, true)
 }
 func (c *AuthController) Logout(ctx *gin.Context) {
-	// Implement logout logic here
+	ctx.SetCookie("token", "", -1, "/", "localhost", false, true)
+	utils.SuccessResponse(ctx, "Logged out successfully", nil)
 }
 func (c *AuthController) ResetPassword(ctx *gin.Context) {
 	// Implement reset password logic here
 }
 func (c *AuthController) ChangePassword(ctx *gin.Context) {
-	// Implement change password logic here
+	var input struct {
+		OldPassword string `json:"oldPassword" binding:"required"`
+		NewPassword string `json:"newPassword" binding:"required"`
+	}
+
+	if err := ctx.ShouldBindJSON(&input); err != nil {
+		utils.BadRequestResponse(ctx, err.Error())
+		return
+	}
+
+	// Get the user from the context
+	user, exists := ctx.Get("user")
+	if !exists {
+		utils.ForbiddenResponse(ctx, "Forbidden")
+		ctx.Abort()
+		return
+	}
+
+	// models.JWTClaims
+	userClaims := user.(models.JWTClaims)
+
+	// Rechercher l'utilisateur
+	userRecord, err := c.service.Client.User.FindFirst(db.User.Email.Equals(userClaims.Email)).Exec(c.service.Ctx)
+	if err != nil || userRecord == nil {
+		utils.BadRequestResponse(ctx, "User not found")
+		return
+	}
+
+	// Vérifier l'ancien mot de passe
+	if !utils.CheckPasswordHash(input.OldPassword, userRecord.Password) {
+		utils.BadRequestResponse(ctx, "Old password is incorrect")
+		return
+	}
+
+	// Hasher le nouveau mot de passe
+	hashedPassword, err := utils.HashPassword(input.NewPassword)
+	if err != nil {
+		utils.InternalServerErrorResponse(ctx, "Failed to hash new password")
+		return
+	}
+
+	// Mettre à jour le mot de passe
+	_, err = c.service.Client.User.FindUnique(db.User.ID.Equals(userRecord.ID)).Update(
+		db.User.Password.Set(hashedPassword),
+	).Exec(c.service.Ctx)
+
+	if err != nil {
+		utils.InternalServerErrorResponse(ctx, "Failed to update password")
+		return
+	}
+
+	utils.SuccessResponse(ctx, "Password changed successfully", nil)
 }
