@@ -21,6 +21,12 @@ jobs:
       with:
         go-version: '1.24.2'
 
+    - name: Use example .env
+      run: cp .env.example .env
+
+    - name: Generate Prisma Client Go
+      run: go run github.com/steebchen/prisma-client-go generate --schema internal/database/prisma/schema.prisma
+
     - name: Build
       run: go build -v ./...
 
