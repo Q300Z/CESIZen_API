@@ -5,9 +5,9 @@ tmp_dir = "tmp"
 [build]
   args_bin = []
   bin = "./tmp/main"
-  cmd = "go build -o ./tmp/main cmd/main.go"
+  cmd = "go run github.com/steebchen/prisma-client-go generate --schema internal/database/prisma/schema.prisma && go build -o ./tmp/main cmd/main.go"
   delay = 1000
-  exclude_dir = ["assets", "tmp", "vendor", "testdata"]
+  exclude_dir = ["assets", "tmp", "vendor", "testdata", "internal/database/prisma/db"]
   exclude_file = []
   exclude_regex = ["_test.go"]
   exclude_unchanged = false
