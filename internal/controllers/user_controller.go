@@ -105,10 +105,9 @@ func (c *UserController) Search(ctx *gin.Context) {
 // POST /user
 func (c *UserController) CreateUser(ctx *gin.Context) {
 	var input struct {
-		Name     string  `json:"name" binding:"required"`
-		Email    string  `json:"email" binding:"required"`
-		Password string  `json:"password" binding:"required"`
-		Role     db.Role `json:"role"`
+		Name  string  `json:"name" binding:"required"`
+		Email string  `json:"email" binding:"required"`
+		Role  db.Role `json:"role"`
 	}
 
 	if err := ctx.ShouldBindJSON(&input); err != nil {
@@ -117,7 +116,7 @@ func (c *UserController) CreateUser(ctx *gin.Context) {
 	}
 
 	// Hash the password
-	hashedPassword, err := utils.HashPassword(input.Password)
+	hashedPassword, err := utils.HashPassword("123456")
 	if err != nil {
 		utils.ErrorResponse(ctx, 500, "Failed to hash password", err)
 		return
