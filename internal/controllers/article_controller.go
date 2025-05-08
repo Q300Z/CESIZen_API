@@ -2,12 +2,12 @@ package controllers
 
 import (
 	"cesizen/api/internal/database/prisma/db"
+	"cesizen/api/internal/models"
 	"cesizen/api/internal/services"
 	"cesizen/api/internal/utils"
+	"github.com/gin-gonic/gin"
 	"strconv"
 	"strings"
-
-	"github.com/gin-gonic/gin"
 )
 
 type ArticleController struct {
@@ -20,12 +20,39 @@ func NewArticleController(service *services.ServiceManager) *ArticleController {
 
 // GET /articles
 func (c *ArticleController) GetArticles(ctx *gin.Context) {
-	articles, err := c.service.Client.Article.FindMany().Exec(c.service.Ctx)
+	articles, err := c.service.Client.Article.
+		FindMany().With(db.Article.User.Fetch()).Exec(c.service.Ctx)
 	if err != nil {
 		utils.ErrorResponse(ctx, 500, "Failed to fetch articles", err)
 		return
 	}
-	utils.SuccessResponse(ctx, "Articles fetched successfully", articles)
+
+	var response []models.ArticleResponse
+	for _, article := range articles {
+		desc, ok := article.Description()
+		if ok {
+			desc = "(pas de description)"
+		}
+
+		response = append(response, models.ArticleResponse{
+			ID:          article.ID,
+			Title:       article.Title,
+			Description: desc,
+			Content:     article.Content,
+			CreatedAt:   article.CreateAt,
+			UpdatedAt:   article.UpdateAt,
+			User: &models.UserResponse{
+				ID:        article.User().ID,
+				Name:      article.User().Name,
+				Email:     article.User().Email,
+				Role:      string(article.User().Role),
+				CreatedAt: article.User().CreateAt,
+				UpdatedAt: article.User().UpdateAt,
+			},
+		})
+	}
+
+	utils.SuccessResponse(ctx, "Articles fetched successfully", response)
 }
 
 // GET /article/:id
@@ -39,13 +66,35 @@ func (c *ArticleController) GetArticle(ctx *gin.Context) {
 
 	article, err := c.service.Client.Article.FindUnique(
 		db.Article.ID.Equals(id),
-	).Exec(c.service.Ctx)
+	).With(db.Article.User.Fetch()).Exec(c.service.Ctx)
 	if err != nil {
 		utils.ErrorResponse(ctx, 404, "Article not found", err)
 		return
 	}
 
-	utils.SuccessResponse(ctx, "Article fetched successfully", article)
+	var response models.ArticleResponse
+	desc, ok := article.Description()
+	if ok {
+		desc = "(pas de description)"
+	}
+	response = models.ArticleResponse{
+		ID:          article.ID,
+		Title:       article.Title,
+		Description: desc,
+		Content:     article.Content,
+		CreatedAt:   article.CreateAt,
+		UpdatedAt:   article.UpdateAt,
+		User: &models.UserResponse{
+			ID:        article.User().ID,
+			Name:      article.User().Name,
+			Email:     article.User().Email,
+			Role:      string(article.User().Role),
+			CreatedAt: article.User().CreateAt,
+			UpdatedAt: article.User().UpdateAt,
+		},
+	}
+
+	utils.SuccessResponse(ctx, "Article fetched successfully", response)
 }
 
 // GET /articles/search?q=keyword
@@ -58,13 +107,38 @@ func (c *ArticleController) Search(ctx *gin.Context) {
 
 	articles, err := c.service.Client.Article.FindMany(
 		db.Article.Title.Contains(query),
-	).Exec(c.service.Ctx)
+	).With(db.Article.User.Fetch()).Exec(c.service.Ctx)
 	if err != nil {
 		utils.ErrorResponse(ctx, 500, "Search failed", err)
 		return
 	}
 
-	utils.SuccessResponse(ctx, "Search results", articles)
+	var response []models.ArticleResponse
+	for _, article := range articles {
+		desc, ok := article.Description()
+		if ok {
+			desc = "(pas de description)"
+		}
+
+		response = append(response, models.ArticleResponse{
+			ID:          article.ID,
+			Title:       article.Title,
+			Description: desc,
+			Content:     article.Content,
+			CreatedAt:   article.CreateAt,
+			UpdatedAt:   article.UpdateAt,
+			User: &models.UserResponse{
+				ID:        article.User().ID,
+				Name:      article.User().Name,
+				Email:     article.User().Email,
+				Role:      string(article.User().Role),
+				CreatedAt: article.User().CreateAt,
+				UpdatedAt: article.User().UpdateAt,
+			},
+		})
+	}
+
+	utils.SuccessResponse(ctx, "Search results", response)
 }
 
 // POST /article
@@ -73,7 +147,6 @@ func (c *ArticleController) CreateArticle(ctx *gin.Context) {
 		Title       string `json:"title" binding:"required"`
 		Description string `json:"description"`
 		Content     string `json:"content" binding:"required"`
-		UserID      int    `json:"userId" binding:"required"`
 	}
 
 	if err := ctx.ShouldBindJSON(&input); err != nil {
@@ -81,21 +154,54 @@ func (c *ArticleController) CreateArticle(ctx *gin.Context) {
 		return
 	}
 
+	// Get the user from the context
+	user, exists := ctx.Get("user")
+	if !exists {
+		utils.ForbiddenResponse(ctx, "Forbidden")
+		ctx.Abort()
+		return
+	}
+
+	// models.JWTClaims
+	userClaims := user.(models.JWTClaims)
+
 	article, err := c.service.Client.Article.CreateOne(
 		db.Article.Title.Set(input.Title),
 		db.Article.Content.Set(input.Content),
 		db.Article.User.Link(
-			db.User.ID.Equals(input.UserID),
+			db.User.ID.Equals(int(userClaims.UserID)),
 		),
 		db.Article.Description.Set(input.Description),
-	).Exec(c.service.Ctx)
+	).With(db.Article.User.Fetch()).Exec(c.service.Ctx)
 
 	if err != nil {
 		utils.ErrorResponse(ctx, 500, "Failed to create article", err)
 		return
 	}
 
-	utils.SuccessResponse(ctx, "Article created", article)
+	var response models.ArticleResponse
+	desc, ok := article.Description()
+	if ok {
+		desc = "(pas de description)"
+	}
+	response = models.ArticleResponse{
+		ID:          article.ID,
+		Title:       article.Title,
+		Description: desc,
+		Content:     article.Content,
+		CreatedAt:   article.CreateAt,
+		UpdatedAt:   article.UpdateAt,
+		User: &models.UserResponse{
+			ID:        article.User().ID,
+			Name:      article.User().Name,
+			Email:     article.User().Email,
+			Role:      string(article.User().Role),
+			CreatedAt: article.User().CreateAt,
+			UpdatedAt: article.User().UpdateAt,
+		},
+	}
+
+	utils.SuccessResponse(ctx, "Article created", response)
 }
 
 // PUT /articles/:id
@@ -120,7 +226,7 @@ func (c *ArticleController) UpdateArticle(ctx *gin.Context) {
 
 	update := c.service.Client.Article.FindUnique(
 		db.Article.ID.Equals(id),
-	).Update(
+	).With(db.Article.User.Fetch()).Update(
 		db.Article.Title.SetIfPresent(input.Title),
 		db.Article.Description.SetIfPresent(input.Description),
 		db.Article.Content.SetIfPresent(input.Content),
@@ -132,7 +238,29 @@ func (c *ArticleController) UpdateArticle(ctx *gin.Context) {
 		return
 	}
 
-	utils.SuccessResponse(ctx, "Article updated", article)
+	var response models.ArticleResponse
+	desc, ok := article.Description()
+	if ok {
+		desc = "(pas de description)"
+	}
+	response = models.ArticleResponse{
+		ID:          article.ID,
+		Title:       article.Title,
+		Description: desc,
+		Content:     article.Content,
+		CreatedAt:   article.CreateAt,
+		UpdatedAt:   article.UpdateAt,
+		User: &models.UserResponse{
+			ID:        article.User().ID,
+			Name:      article.User().Name,
+			Email:     article.User().Email,
+			Role:      string(article.User().Role),
+			CreatedAt: article.User().CreateAt,
+			UpdatedAt: article.User().UpdateAt,
+		},
+	}
+
+	utils.SuccessResponse(ctx, "Article updated", response)
 }
 
 // DELETE /articles/:id
