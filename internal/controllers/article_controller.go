@@ -30,7 +30,7 @@ func (c *ArticleController) GetArticles(ctx *gin.Context) {
 	var response []models.ArticleResponse
 	for _, article := range articles {
 		desc, ok := article.Description()
-		if ok {
+		if !ok {
 			desc = "(pas de description)"
 		}
 
@@ -74,7 +74,7 @@ func (c *ArticleController) GetArticle(ctx *gin.Context) {
 
 	var response models.ArticleResponse
 	desc, ok := article.Description()
-	if ok {
+	if !ok {
 		desc = "(pas de description)"
 	}
 	response = models.ArticleResponse{
@@ -116,7 +116,7 @@ func (c *ArticleController) Search(ctx *gin.Context) {
 	var response []models.ArticleResponse
 	for _, article := range articles {
 		desc, ok := article.Description()
-		if ok {
+		if !ok {
 			desc = "(pas de description)"
 		}
 
@@ -181,7 +181,7 @@ func (c *ArticleController) CreateArticle(ctx *gin.Context) {
 
 	var response models.ArticleResponse
 	desc, ok := article.Description()
-	if ok {
+	if !ok {
 		desc = "(pas de description)"
 	}
 	response = models.ArticleResponse{
@@ -240,7 +240,7 @@ func (c *ArticleController) UpdateArticle(ctx *gin.Context) {
 
 	var response models.ArticleResponse
 	desc, ok := article.Description()
-	if ok {
+	if !ok {
 		desc = "(pas de description)"
 	}
 	response = models.ArticleResponse{
