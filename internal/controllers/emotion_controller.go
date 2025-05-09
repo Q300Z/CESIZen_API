@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"cesizen/api/internal/database/prisma/db"
+	"cesizen/api/internal/helpers"
 	"cesizen/api/internal/services"
 	"cesizen/api/internal/utils"
 	"strconv"
@@ -20,9 +21,7 @@ func NewEmotionController(service *services.ServiceManager) *EmotionController {
 
 // GET /emotions
 func (c *EmotionController) GetEmotions(ctx *gin.Context) {
-	emotions, err := c.service.Client.Emotion.FindMany().With(
-		db.Emotion.EmotionBase.Fetch(),
-	).Exec(c.service.Ctx)
+	emotions, err := c.service.Client.Emotion.FindMany().Exec(c.service.Ctx)
 
 	if err != nil {
 		utils.ErrorResponse(ctx, 500, "Failed to fetch emotions", err)
@@ -74,22 +73,38 @@ func (c *EmotionController) Search(ctx *gin.Context) {
 
 // POST /emotions
 func (c *EmotionController) CreateEmotion(ctx *gin.Context) {
-	var input struct {
-		Name          string `json:"name" binding:"required"`
-		EmotionBaseID *int   `json:"emotionBaseId"` // facultatif pour une émotion de base
-	}
-
-	if err := ctx.ShouldBindJSON(&input); err != nil {
-		utils.ErrorResponse(ctx, 400, "Invalid input", err)
+	// Parse form-data (limite 10 Mo)
+	if err := ctx.Request.ParseMultipartForm(10 << 20); err != nil {
+		utils.ErrorResponse(ctx, 400, "Failed to parse form", err)
 		return
 	}
 
-	if input.EmotionBaseID == nil {
-		// On crée une EmotionBase
-		base, err := c.service.Client.EmotionBase.CreateOne(
-			db.EmotionBase.Name.Set(input.Name),
-		).Exec(c.service.Ctx)
+	name := ctx.PostForm("name")
+	emotionBaseIDStr := ctx.PostForm("emotionBaseID")
 
+	if name == "" {
+		utils.ErrorResponse(ctx, 400, "Name is required", nil)
+		return
+	}
+
+	// Gérer l'image via le helper
+	var imageURL *string
+	fileHeader, err := ctx.FormFile("image")
+	if err == nil {
+		_, url, err := helpers.SaveImage(fileHeader)
+		if err != nil {
+			utils.ErrorResponse(ctx, 500, "Image upload failed", err)
+			return
+		}
+		imageURL = &url
+	}
+
+	// S'il n'y a pas d'EmotionBaseID, on crée une EmotionBase
+	if emotionBaseIDStr == "" {
+		baseCreate := c.service.Client.EmotionBase.CreateOne(
+			db.EmotionBase.Name.Set(name),
+		)
+		base, err := baseCreate.Exec(c.service.Ctx)
 		if err != nil {
 			utils.ErrorResponse(ctx, 500, "Failed to create emotion base", err)
 			return
@@ -98,14 +113,23 @@ func (c *EmotionController) CreateEmotion(ctx *gin.Context) {
 		return
 	}
 
-	// On crée une Emotion liée à une EmotionBase existante
-	emotion, err := c.service.Client.Emotion.CreateOne(
-		db.Emotion.Name.Set(input.Name),
-		db.Emotion.EmotionBase.Link(
-			db.EmotionBase.ID.Equals(*input.EmotionBaseID),
-		),
-	).Exec(c.service.Ctx)
+	// Convertir EmotionBaseID
+	emotionBaseID, err := strconv.Atoi(emotionBaseIDStr)
+	if err != nil {
+		utils.ErrorResponse(ctx, 400, "Invalid emotionBaseId", err)
+		return
+	}
 
+	// Créer une Emotion liée à une EmotionBase
+	emotionCreate := c.service.Client.Emotion.CreateOne(
+		db.Emotion.Name.Set(name),
+		db.Emotion.Image.SetIfPresent(imageURL),
+		db.Emotion.EmotionBase.Link(
+			db.EmotionBase.ID.Equals(emotionBaseID),
+		),
+	)
+
+	emotion, err := emotionCreate.Exec(c.service.Ctx)
 	if err != nil {
 		utils.ErrorResponse(ctx, 500, "Failed to create emotion", err)
 		return
@@ -122,24 +146,50 @@ func (c *EmotionController) UpdateEmotion(ctx *gin.Context) {
 		return
 	}
 
-	var input struct {
-		Name          *string `json:"name"`
-		EmotionBaseID *int    `json:"emotionBaseId"`
-	}
-
-	if err := ctx.ShouldBindJSON(&input); err != nil {
-		utils.ErrorResponse(ctx, 400, "Invalid input", err)
+	// Parse form-data (limite 10 Mo)
+	if err := ctx.Request.ParseMultipartForm(10 << 20); err != nil {
+		utils.ErrorResponse(ctx, 400, "Failed to parse form", err)
 		return
 	}
 
+	// Récupérer les champs du formulaire
+	name := ctx.PostForm("name")
+	emotionBaseIDStr := ctx.PostForm("emotionBaseId")
+
+	// Gérer l'image via le helper si elle est présente
+	var imageURL *string
+	fileHeader, err := ctx.FormFile("image")
+	if err == nil {
+		_, url, err := helpers.SaveImage(fileHeader)
+		if err != nil {
+			utils.ErrorResponse(ctx, 500, "Image upload failed", err)
+			return
+		}
+		imageURL = &url
+	}
 	update := c.service.Client.Emotion.FindUnique(
 		db.Emotion.ID.Equals(id),
 	).Update(
-		db.Emotion.Name.SetIfPresent(input.Name),
-		db.Emotion.EmotionBase.Link(
-			db.EmotionBase.ID.Equals(*input.EmotionBaseID),
-		),
+		db.Emotion.Name.Set(name),
+		db.Emotion.Image.SetIfPresent(imageURL),
 	)
+
+	if emotionBaseIDStr != "" {
+		emotionBaseID, err := strconv.Atoi(emotionBaseIDStr)
+		if err != nil {
+			utils.ErrorResponse(ctx, 400, "Invalid emotionBaseId", err)
+			return
+		}
+		update = c.service.Client.Emotion.FindUnique(
+			db.Emotion.ID.Equals(id),
+		).Update(
+			db.Emotion.Name.Set(name),
+			db.Emotion.Image.SetIfPresent(imageURL),
+			db.Emotion.EmotionBase.Link(
+				db.EmotionBase.ID.Equals(emotionBaseID),
+			),
+		)
+	}
 
 	emotion, err := update.Exec(c.service.Ctx)
 	if err != nil {
@@ -172,9 +222,7 @@ func (c *EmotionController) DeleteEmotion(ctx *gin.Context) {
 
 // GET /emotions/base
 func (c *EmotionController) GetEmotionBases(ctx *gin.Context) {
-	bases, err := c.service.Client.EmotionBase.FindMany().With(
-		db.EmotionBase.Emotions.Fetch(),
-	).Exec(c.service.Ctx)
+	bases, err := c.service.Client.EmotionBase.FindMany().Exec(c.service.Ctx)
 
 	if err != nil {
 		utils.ErrorResponse(ctx, 500, "Failed to fetch emotion bases", err)
@@ -182,6 +230,26 @@ func (c *EmotionController) GetEmotionBases(ctx *gin.Context) {
 	}
 
 	utils.SuccessResponse(ctx, "Emotion bases fetched", bases)
+}
+
+// GET /emotions/base/:id
+func (c *EmotionController) GetEmotionBase(ctx *gin.Context) {
+	id, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		utils.ErrorResponse(ctx, 400, "Invalid emotion base ID", err)
+		return
+	}
+
+	emotion, err := c.service.Client.EmotionBase.FindUnique(
+		db.EmotionBase.ID.Equals(id),
+	).With(db.EmotionBase.Emotions.Fetch()).Exec(c.service.Ctx)
+
+	if err != nil || emotion == nil {
+		utils.ErrorResponse(ctx, 404, "Emotion base not found", err)
+		return
+	}
+
+	utils.SuccessResponse(ctx, "Emotion base fetched", emotion)
 }
 
 // PUT /emotions/base/:id

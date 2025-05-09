@@ -32,11 +32,11 @@ func CreatedResponse(c *gin.Context, message string, data interface{}) {
 }
 
 // ErrorResponse envoie une réponse d’erreur personnalisée
-func ErrorResponse(c *gin.Context, statusCode int, message string, err interface{}) {
+func ErrorResponse(c *gin.Context, statusCode int, message string, err error) {
 	c.JSON(statusCode, ApiResponse{
 		Success: false,
 		Message: message,
-		Error:   err,
+		Error:   err.Error(),
 	})
 }
 

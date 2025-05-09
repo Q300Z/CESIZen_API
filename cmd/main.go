@@ -4,6 +4,7 @@ import (
 	"cesizen/api/internal/routes"
 	"cesizen/api/internal/services"
 	"cesizen/api/internal/utils"
+	"github.com/joho/godotenv"
 	"log"
 	"os"
 	"os/signal"
@@ -14,13 +15,25 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func init() {
+
+	err := godotenv.Load(".env")
+
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+}
+
 func main() {
+	// Initialisation de Gin
 	r := gin.Default()
 
+	if utils.GetEnv("GIN_MODE", "debug") == "release" {
+		gin.SetMode(gin.ReleaseMode)
+	}
 	// Variables app
 	appHost := utils.GetEnv("APP_HOST", "localhost")
 	appPort := utils.GetEnvAsInt("APP_PORT", 8080)
-
 	// Paramétrage du CORS Policy
 	config := cors.DefaultConfig()
 	//config.AllowOrigins = []string{"http://localhost:3000", "http://127.0.0.1:3000"}

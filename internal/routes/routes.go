@@ -9,6 +9,7 @@ import (
 
 func GetRoutes(r *gin.Engine, serviceManager *services.ServiceManager) {
 	v1Group := r.Group("/v1")
+	v1Group.Static("/uploads", "./uploads")
 	v1.AddArticleRoutes(v1Group, serviceManager)
 	v1.AddAuthRoutes(v1Group, serviceManager)
 	v1.AddEmotionRoutes(v1Group, serviceManager)

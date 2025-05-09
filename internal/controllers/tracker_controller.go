@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"cesizen/api/internal/database/prisma/db"
+	"cesizen/api/internal/models"
 	"cesizen/api/internal/services"
 	"cesizen/api/internal/utils"
 	"log"
@@ -82,7 +83,6 @@ func (c *TrackerController) Search(ctx *gin.Context) {
 func (c *TrackerController) CreateTracker(ctx *gin.Context) {
 	var input struct {
 		Description string `json:"description"`
-		UserID      int    `json:"userId" binding:"required"`
 		EmotionID   int    `json:"emotionId" binding:"required"`
 	}
 
@@ -91,9 +91,20 @@ func (c *TrackerController) CreateTracker(ctx *gin.Context) {
 		return
 	}
 
+	// Get the user from the context
+	user, exists := ctx.Get("user")
+	if !exists {
+		utils.ForbiddenResponse(ctx, "Forbidden")
+		ctx.Abort()
+		return
+	}
+
+	// models.JWTClaims
+	userClaims := user.(models.JWTClaims)
+
 	create := c.service.Client.Tracker.CreateOne(
 		db.Tracker.User.Link(
-			db.User.ID.Equals(input.UserID),
+			db.User.ID.Equals(int(userClaims.UserID)),
 		),
 		db.Tracker.Emotion.Link(
 			db.Emotion.ID.Equals(input.EmotionID),
