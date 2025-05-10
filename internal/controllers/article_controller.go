@@ -201,7 +201,7 @@ func (c *ArticleController) CreateArticle(ctx *gin.Context) {
 		},
 	}
 
-	utils.SuccessResponse(ctx, "Article created", response)
+	utils.CreatedResponse(ctx, "Article created", response)
 }
 
 // PUT /articles/:id

@@ -39,7 +39,7 @@ model Tracker {
   updateAt    DateTime @updatedAt
 
   // Relations
-  user   User @relation(fields: [userID], references: [id])
+  user   User @relation(fields: [userID], references: [id], onDelete: Cascade, onUpdate: Cascade)
   userID Int
 
   emotion   Emotion @relation(fields: [emotionID], references: [id], onDelete: Cascade, onUpdate: Cascade)
@@ -75,6 +75,6 @@ model Article {
   updateAt    DateTime @updatedAt
 
   // Relations
-  user   User @relation(fields: [userID], references: [id])
+  user   User @relation(fields: [userID], references: [id], onDelete: Cascade,onUpdate: Cascade)
   userID Int
 }

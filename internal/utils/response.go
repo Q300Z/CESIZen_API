@@ -33,10 +33,14 @@ func CreatedResponse(c *gin.Context, message string, data interface{}) {
 
 // ErrorResponse envoie une réponse d’erreur personnalisée
 func ErrorResponse(c *gin.Context, statusCode int, message string, err error) {
+	var errMsg string
+	if err != nil {
+		errMsg = err.Error()
+	}
 	c.JSON(statusCode, ApiResponse{
 		Success: false,
 		Message: message,
-		Error:   err.Error(),
+		Error:   errMsg,
 	})
 }
 

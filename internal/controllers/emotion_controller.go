@@ -5,10 +5,9 @@ import (
 	"cesizen/api/internal/helpers"
 	"cesizen/api/internal/services"
 	"cesizen/api/internal/utils"
+	"github.com/gin-gonic/gin"
 	"strconv"
 	"strings"
-
-	"github.com/gin-gonic/gin"
 )
 
 type EmotionController struct {
@@ -135,7 +134,7 @@ func (c *EmotionController) CreateEmotion(ctx *gin.Context) {
 		return
 	}
 
-	utils.SuccessResponse(ctx, "Emotion created", emotion)
+	utils.CreatedResponse(ctx, "Emotion created", emotion)
 }
 
 // PUT /emotions/:id

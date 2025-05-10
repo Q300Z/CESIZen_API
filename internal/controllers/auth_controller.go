@@ -52,10 +52,7 @@ func (c *AuthController) Login(ctx *gin.Context) {
 		utils.InternalServerErrorResponse(ctx, "Failed to generate token")
 		return
 	}
-	var response struct {
-		Token string              `json:"token"`
-		User  models.UserResponse `json:"user"`
-	}
+	var response models.LoginResponse
 	response.Token = token
 	response.User = models.UserResponse{
 		ID:        userRecord.ID,
@@ -123,10 +120,7 @@ func (c *AuthController) Register(ctx *gin.Context) {
 		return
 	}
 
-	var response struct {
-		Token string              `json:"token"`
-		User  models.UserResponse `json:"user"`
-	}
+	var response models.LoginResponse
 	response.Token = token
 	response.User = models.UserResponse{
 		ID:        newUser.ID,
@@ -136,7 +130,7 @@ func (c *AuthController) Register(ctx *gin.Context) {
 		CreatedAt: newUser.CreateAt,
 		UpdatedAt: newUser.UpdateAt,
 	}
-	utils.SuccessResponse(ctx, "User registered successfully", response)
+	utils.CreatedResponse(ctx, "User registered successfully", response)
 	ctx.SetCookie("token", token, 3600, "/", "localhost", false, true)
 }
 func (c *AuthController) Logout(ctx *gin.Context) {
