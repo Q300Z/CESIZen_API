@@ -5,9 +5,11 @@ import (
 	"cesizen/api/internal/models"
 	"cesizen/api/internal/services"
 	"cesizen/api/internal/utils"
+	"fmt"
 	"log"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -176,4 +178,65 @@ func (c *TrackerController) DeleteTracker(ctx *gin.Context) {
 	}
 
 	utils.SuccessResponse(ctx, "Tracker deleted successfully", nil)
+}
+
+// GET /trackers/report?start=2024-11-01&end=2025-04-30
+func (c *TrackerController) Report(ctx *gin.Context) {
+	startStr := ctx.Query("start")
+	endStr := ctx.Query("end")
+
+	start, err := time.Parse("2006-01-02", startStr)
+	if err != nil {
+		utils.ErrorResponse(ctx, 400, "Invalid start date", err)
+		return
+	}
+	end, err := time.Parse("2006-01-02", endStr)
+	if err != nil {
+		utils.ErrorResponse(ctx, 400, "Invalid end date", err)
+		return
+	}
+
+	if end.Before(start) {
+		utils.ErrorResponse(ctx, 400, "End date must be after start date", nil)
+		return
+	}
+
+	duration := end.Sub(start)
+	groupByWeek := duration.Hours()/24/30 <= 6 // 6 mois ou moins → par semaine
+
+	// Récupération de tous les trackers dans la période
+	trackers, err := c.service.Client.Tracker.FindMany(
+		db.Tracker.CreateAt.Gte(start),
+		db.Tracker.CreateAt.Lte(end),
+	).With(
+		db.Tracker.Emotion.Fetch(),
+	).Exec(c.service.Ctx)
+
+	if err != nil {
+		utils.ErrorResponse(ctx, 500, "Error fetching trackers", err)
+		return
+	}
+
+	// Statistiques : carte [bucket] -> carte [emotion name] -> count
+	type BucketStats map[string]map[string]int
+
+	stats := make(BucketStats)
+
+	for _, tracker := range trackers {
+		var bucket string
+		if groupByWeek {
+			year, week := tracker.CreateAt.ISOWeek()
+			bucket = fmt.Sprintf("%d-W%02d", year, week)
+		} else {
+			bucket = tracker.CreateAt.Format("2006-01")
+		}
+
+		emotion := strings.TrimSpace(tracker.Emotion().Name)
+		if stats[bucket] == nil {
+			stats[bucket] = map[string]int{}
+		}
+		stats[bucket][emotion]++
+	}
+
+	utils.SuccessResponse(ctx, "Emotion stats generated", stats)
 }

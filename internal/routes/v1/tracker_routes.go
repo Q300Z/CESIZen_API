@@ -18,5 +18,6 @@ func AddTrackerRoutes(rg *gin.RouterGroup, serviceManager *services.ServiceManag
 	rg.POST("/trackers", middlewares.Authentification, controller.CreateTracker)
 	rg.PUT("/trackers/:id", middlewares.Authentification, controller.UpdateTracker)
 	rg.DELETE("/trackers/:id", middlewares.Authentification, controller.DeleteTracker)
+	rg.GET("/trackers/report", middlewares.Authentification, controller.Report)
 
 }

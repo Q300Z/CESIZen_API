@@ -13,7 +13,7 @@ import (
 
 // JWTSecret est la clé secrète utilisée pour signer les tokens.
 // Tu peux la rendre configurable via une variable d'environnement.
-var JWTSecret = []byte(GetEnv("JWT_SECRET", ""))
+var JWTSecret = []byte(GetEnv("JWT_SECRET", "your_secret_key"))
 
 // GenerateJWT génère un token JWT avec des claims personnalisés.
 func GenerateJWT(user *db.UserModel) (string, error) {
@@ -78,8 +78,8 @@ func ParseJWT(token string) (models.JWTClaims, error) {
 }
 
 func CheckPasswordHash(password, hash string) bool {
+	fmt.Print(string(JWTSecret))
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil
-
 }
 
 func HashPassword(password string) (string, error) {
