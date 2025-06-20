@@ -62,8 +62,9 @@ services:
     depends_on:
       - db
     networks:
-      - db # Utiliser le réseau de la base de données pour la communication
       - traefik  # Utiliser le réseau Traefik pour la communication entre les services
+      - db # Utiliser le réseau de la base de données pour la communication
+
   db:
     image: postgres:latest
     environment:
