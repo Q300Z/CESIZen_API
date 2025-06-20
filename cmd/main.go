@@ -4,7 +4,6 @@ import (
 	"cesizen/api/internal/routes"
 	"cesizen/api/internal/services"
 	"cesizen/api/internal/utils"
-	"github.com/joho/godotenv"
 	"log"
 	"os"
 	"os/signal"
@@ -17,11 +16,11 @@ import (
 
 func init() {
 
-	err := godotenv.Load(".env")
+	//err := godotenv.Load(".env")
 
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
+	//if err != nil {
+	//	log.Fatal("Error loading .env file")
+	//}
 }
 
 func main() {

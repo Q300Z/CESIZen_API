@@ -1,20 +1,67 @@
 services:
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "${APP_PORT}:${APP_PORT}"
+  traefik:
+    image: traefik:v3.4.1
+    restart: unless-stopped
+    command:
+      - "--log.level=DEBUG"
+      - "--providers.docker=true"  # Activer le provider Docker
+      - "--providers.docker.exposedbydefault=false" # Ne pas exposer les conteneurs par défaut
+      - "--entrypoints.web.address=:80"  # Définir le point d'entrée pour le trafic HTTP
+      - "--entrypoints.websecure.address=:443"  # Définir le point d'entrée pour le trafic HTTPS
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"  # Rediriger HTTP vers HTTPS
+      - "--entrypoints.websecure.http.tls=true"  # Activer TLS pour le point d'entrée HTTPS
+      - "--certificatesresolvers.cloudflare.acme.httpchallenge=true"
+      - "--certificatesresolvers.cloudflare.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.cloudflare.acme.dnschallenge=true"
+      - "--certificatesresolvers.cloudflare.acme.dnschallenge.provider=cloudflare"
+      - "--certificatesresolvers.cloudflare.acme.email=${CF_API_EMAIL}"
+      - "--certificatesresolvers.cloudflare.acme.storage=/letsencrypt/acme.json"
     environment:
-      DB_HOST: ${DB_HOST}
+      - CF_API_EMAIL=${CF_API_EMAIL}
+      - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}
+    ports:
+      - "80:80"  # Exposer le port 80 pour le trafic HTTP
+      - "443:443"  # Exposer le port 443 pour le trafic HTTPS
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "../letsencrypt:/letsencrypt"
+    networks:
+      - traefik  # Utiliser le réseau Traefik pour la communication entre les services
+  front:
+    image: ghcr.io/q300z/cesizen-vue:latest
+    labels:
+      - "traefik.enable=true"  # Activer Traefik pour ce service
+      - "traefik.http.routers.api.rule=Host(`rr.qalpuch.cc`)"  # Règle de routage pour le service front
+      - "traefik.http.routers.api.entrypoints=websecure"  # Utiliser le point d'entrée HTTPS
+      - "traefik.http.routers.api.tls.certresolver=cloudflare"  # Utiliser le résolveur de certificats Cloudflare
+      - "traefik.http.services.api.loadbalancer.server.port=80"  # Port interne du service API
+    environment:
+      "VITE_API_URL": "https://rr-api.qalpuch.cc/v1"  # URL de l'API pour le front
+  api:
+    image: ghcr.io/q300z/cesizen-api:latest
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+    labels:
+      - "traefik.enable=true"  # Activer Traefik pour ce service
+      - "traefik.http.routers.api.rule=Host(`rr-api.qalpuch.cc`)"  # Règle de routage pour le service front
+      - "traefik.http.routers.api.entrypoints=websecure"  # Utiliser le point d'entrée HTTPS
+      - "traefik.http.routers.api.tls.certresolver=cloudflare"  # Utiliser le résolveur de certificats Cloudflare
+      - "traefik.http.services.api.loadbalancer.server.port=8080"  # Port interne du service API
+    environment:
+      DB_HOST: db
       DB_PORT: ${DB_PORT}
+    env_file:
+      - .env
     depends_on:
       - db
-    restart: always
     networks:
-      - app-network
+      - db # Utiliser le réseau de la base de données pour la communication
+      - traefik  # Utiliser le réseau Traefik pour la communication entre les services
   db:
     image: postgres:latest
+    ports:
+      - "5432:5432"
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -22,12 +69,21 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data
     networks:
-      - app-network
-
+      - db # Utiliser le réseau de la base de données pour la communication
+  watchtower:
+    image: containrrr/watchtower:latest
+    restart: unless-stopped
+    command: --interval 30 --cleanup  # Vérifier les mises à jour toutes les 30 secondes et nettoyer les images obsolètes
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"  # Accès au socket Docker pour surveiller les conteneurs
+      - "~/.docker/config.json:/config.json"
+    networks:
+      - traefik
 volumes:
   db_data:
     driver: local
 
 networks:
-  app-network:
-    driver: bridge
+  db:
+  traefik:
+    name: web

@@ -24,7 +24,20 @@ func NewTrackerController(service *services.ServiceManager) *TrackerController {
 
 // GET /trackers
 func (c *TrackerController) GetTrackers(ctx *gin.Context) {
-	trackers, err := c.service.Client.Tracker.FindMany().With(
+	// Get the user from the context
+	user, exists := ctx.Get("user")
+	if !exists {
+		utils.ForbiddenResponse(ctx, "Forbidden")
+		ctx.Abort()
+		return
+	}
+
+	// models.JWTClaims
+	userClaims := user.(models.JWTClaims)
+
+	trackers, err := c.service.Client.Tracker.FindMany(
+		db.Tracker.UserID.Equals(int(userClaims.UserID)),
+	).With(
 		db.Tracker.Emotion.Fetch().With(db.Emotion.EmotionBase.Fetch()),
 	).Exec(c.service.Ctx)
 

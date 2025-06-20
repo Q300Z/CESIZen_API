@@ -15,15 +15,20 @@ RUN rm -R internal/database/prisma/db
 # Générer le Prisma Client Go
 RUN go run github.com/steebchen/prisma-client-go generate --schema internal/database/prisma/schema.prisma
 
-ENV GIN_MODE=release
+ARG GIN_MODE
+ENV GIN_MODE=${GIN_MODE:-release}
 
 # Compiler l'application Go (optimisation avec -ldflags pour la taille de l'image)
 RUN go build -ldflags "-s -w" -o app cmd/main.go
 
 FROM golang:1.24.2-alpine
 
+LABEL org.opencontainers.image.source=https://github.com/Q300Z/CESIZen_API
+
 # Installer les certificats SSL nécessaires
 RUN apk --no-cache add ca-certificates
+# Installer les dépendances nécessaires pour Prisma
+RUN go get github.com/steebchen/prisma-client-go
 
 WORKDIR /root/
 
@@ -36,12 +41,8 @@ COPY --from=builder /app/go.mod /app/go.sum ./
 # On rend executable entrypoint.sh
 RUN chmod +x entrypoint.sh
 
-# Copier le fichier .env pour la prod
-COPY .env .
-
-
-ENV DB_HOST=${DB_HOST}
-ENV DB_PORT=${DB_PORT}
+ARG GIN_MODE
+ENV GIN_MODE=${GIN_MODE:-release}
 
 EXPOSE 8080
 
