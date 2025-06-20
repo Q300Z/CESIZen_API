@@ -209,3 +209,26 @@ func (c *UserController) DeleteUser(ctx *gin.Context) {
 
 	utils.SuccessResponse(ctx, "User deleted successfully", nil)
 }
+
+// DELETE /users/me
+func (c *UserController) DeleteCurrentUser(ctx *gin.Context) {
+	user, exists := ctx.Get("user")
+	if !exists {
+		utils.ErrorResponse(ctx, 401, "Unauthorized", nil)
+		return
+	}
+
+	userClaims := user.(models.JWTClaims)
+	id := userClaims.UserID
+
+	_, err := c.service.Client.User.FindUnique(
+		db.User.ID.Equals(int(id)),
+	).Delete().Exec(c.service.Ctx)
+
+	if err != nil {
+		utils.ErrorResponse(ctx, 500, "Failed to delete user", err)
+		return
+	}
+
+	utils.SuccessResponse(ctx, "User deleted successfully", nil)
+}

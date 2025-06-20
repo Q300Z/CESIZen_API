@@ -18,5 +18,6 @@ func AddUserRoutes(rg *gin.RouterGroup, serviceManager *services.ServiceManager)
 	rg.POST("/users", middlewares.Authentification, middlewares.Authorization, controller.CreateUser)
 	rg.PUT("/users/:id", middlewares.Authentification, controller.UpdateUser)
 	rg.DELETE("/users/:id", middlewares.Authentification, middlewares.Authorization, controller.DeleteUser)
+	rg.DELETE("/users/me", middlewares.Authentification, controller.DeleteCurrentUser)
 
 }

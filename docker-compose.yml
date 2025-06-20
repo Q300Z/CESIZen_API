@@ -39,6 +39,8 @@ services:
       "VITE_API_URL": "https://cesizen-api.qalpuch.cc/v1"  # URL de l'API pour le front
     depends_on:
       - api
+    networks:
+      - traefik  # Utiliser le réseau Traefik pour la communication entre les services
   api:
     image: ghcr.io/q300z/cesizen-api:latest
     restart: unless-stopped

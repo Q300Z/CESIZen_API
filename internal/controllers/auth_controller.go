@@ -95,6 +95,20 @@ func (c *AuthController) Register(ctx *gin.Context) {
 		return
 	}
 
+	// CHeck if exist users if exist, then set role to user, else set to admin
+	var role db.Role
+	existingUsers, err := c.service.Client.User.FindMany().Exec(c.service.Ctx)
+	if err != nil {
+		log.Println("Error checking existing users:", err)
+		utils.InternalServerErrorResponse(ctx, "Failed to check existing users")
+		return
+	}
+	if len(existingUsers) > 0 {
+		role = db.RoleUser // Set role to user if users already exist
+	} else {
+		role = db.RoleAdmin // Set role to admin if no users exist
+	}
+
 	// Hash password
 	hashedPassword, err := utils.HashPassword(user.Password)
 	if err != nil {
@@ -107,6 +121,7 @@ func (c *AuthController) Register(ctx *gin.Context) {
 		db.User.Name.Set(user.Username),
 		db.User.Email.Set(user.Email),
 		db.User.Password.Set(hashedPassword),
+		db.User.Role.Set(role),
 	).Exec(c.service.Ctx)
 	if err != nil {
 		utils.InternalServerErrorResponse(ctx, "Failed to create user")
