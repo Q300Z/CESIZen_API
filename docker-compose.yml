@@ -54,6 +54,7 @@ services:
       - "traefik.http.routers.api.entrypoints=websecure"  # Utiliser le point d'entrée HTTPS
       - "traefik.http.routers.api.tls.certresolver=cloudflare"  # Utiliser le résolveur de certificats Cloudflare
       - "traefik.http.services.api.loadbalancer.server.port=8080"  # Port interne du service API
+      - "traefik.docker.network=traefik"  # Spécifier le réseau Traefik pour ce service
     environment:
       DB_HOST: db
       DB_PORT: ${DB_PORT}
