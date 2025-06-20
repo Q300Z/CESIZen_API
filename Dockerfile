@@ -27,8 +27,6 @@ LABEL org.opencontainers.image.source=https://github.com/Q300Z/CESIZen_API
 
 # Installer les certificats SSL nécessaires
 RUN apk --no-cache add ca-certificates
-# Installer les dépendances nécessaires pour Prisma
-RUN go get github.com/steebchen/prisma-client-go
 
 WORKDIR /root/
 
@@ -37,6 +35,9 @@ COPY --from=builder /app/app .
 COPY --from=builder /app/scripts/entrypoint.sh .
 COPY --from=builder /app/internal/database/prisma/ ./internal/database/prisma/
 COPY --from=builder /app/go.mod /app/go.sum ./
+
+# Installer les dépendances nécessaires pour Prisma
+RUN go get github.com/steebchen/prisma-client-go
 
 # On rend executable entrypoint.sh
 RUN chmod +x entrypoint.sh
