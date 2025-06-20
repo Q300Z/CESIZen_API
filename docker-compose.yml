@@ -35,6 +35,7 @@ services:
       - "traefik.http.routers.front.rule=Host(`cesizen.qalpuch.cc`)"  # Règle de routage pour le service front
       - "traefik.http.routers.front.entrypoints=websecure"  # Utiliser le point d'entrée HTTPS
       - "traefik.http.routers.front.tls.certresolver=cloudflare"  # Utiliser le résolveur de certificats Cloudflare
+      - "traefik.http.services.front.loadbalancer.server.port=80"  # Port interne du service front
     environment:
       "VITE_API_URL": "https://cesizen-api.qalpuch.cc/v1"  # URL de l'API pour le front
     depends_on:
@@ -52,6 +53,7 @@ services:
       - "traefik.http.routers.api.rule=Host(`cesizen-api.qalpuch.cc`)"  # Règle de routage pour le service front
       - "traefik.http.routers.api.entrypoints=websecure"  # Utiliser le point d'entrée HTTPS
       - "traefik.http.routers.api.tls.certresolver=cloudflare"  # Utiliser le résolveur de certificats Cloudflare
+      - "traefik.http.services.api.loadbalancer.server.port=8080"  # Port interne du service API
     environment:
       DB_HOST: db
       DB_PORT: ${DB_PORT}
