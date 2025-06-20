@@ -89,4 +89,8 @@ volumes:
 
 networks:
   db:
+    name: db
   traefik:
+    name: traefik
+    driver: bridge  # Utiliser le driver bridge pour le réseau Traefik
+    attachable: true  # Permettre aux conteneurs de se connecter à ce réseau
