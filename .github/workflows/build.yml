@@ -114,10 +114,12 @@ jobs:
 
       - name: Set image tags
         run: |
-          if [ "${{ env.GIN_MODE }}" = "release" ]; then
-            echo "TAGS=latest,prod-${{ steps.vars.outputs.SHORT_SHA }}" >> $GITHUB_ENV
+          if [ "${{ env.NODE_ENV }}" = "production" ]; then
+            echo "TAG=latest" >> $GITHUB_ENV
+            echo "VERSION=prod-${{ steps.vars.outputs.SHORT_SHA }}" >> $GITHUB_ENV
           else
-            echo "TAGS=dev,dev-${{ steps.vars.outputs.SHORT_SHA }}" >> $GITHUB_ENV
+            echo "TAG=dev" >> $GITHUB_ENV
+            echo "VERSION=dev-${{ steps.vars.outputs.SHORT_SHA }}" >> $GITHUB_ENV
           fi
 
       - name: Log in to GitHub Container Registry
@@ -137,12 +139,12 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$(echo ${{ env.TAGS }} | cut -d',' -f1)
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$(echo ${{ env.TAGS }} | cut -d',' -f2)
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}
 
           build-args: |
             GIN_MODE=${{ env.ENV_NAME }}
-            VERSION=$(echo ${{ env.TAGS }} | cut -d',' -f2)
+            VERSION=${{ env.VERSION }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
