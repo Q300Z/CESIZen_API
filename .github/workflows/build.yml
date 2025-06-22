@@ -19,12 +19,6 @@ jobs:
         with:
           go-version: '1.24.2'
 
-      - name: Use example .env
-        run: cp .env.test .env
-
-      - name: Generate Prisma Client Go
-        run: go run github.com/steebchen/prisma-client-go db push --schema internal/database/prisma/schema.prisma
-
       - name: Cache Go modules
         uses: actions/cache@v4
         with:
