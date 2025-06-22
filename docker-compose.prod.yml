@@ -9,8 +9,6 @@ services:
       - "traefik.http.routers.front.entrypoints=websecure"  # Utiliser le point d'entrée HTTPS
       - "traefik.http.routers.front.tls.certresolver=cloudflare"  # Utiliser le résolveur de certificats Cloudflare
       - "traefik.http.services.front.loadbalancer.server.port=80"  # Port interne du service front
-    environment:
-      "VITE_API_URL": "https://cesizen-api.qalpuch.cc/v1"  # URL de l'API pour le front
     depends_on:
       api:
         required: true

@@ -55,4 +55,4 @@ volumes:
 
 networks:
   db:
-    name: db
+    name: db-local
