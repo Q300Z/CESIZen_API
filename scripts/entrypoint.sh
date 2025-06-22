@@ -17,5 +17,13 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-echo "✅ Starting the application..."
-exec ./app
+echo "✅ Migration completed successfully."
+
+# Check if in development mode for start with air or without air
+if [ "GIN_MODE" = "development" ]; then
+  echo "🚀 Starting application with air..."
+  air
+else
+  echo "🚀 Starting application in production mode..."
+  ./main
+fi

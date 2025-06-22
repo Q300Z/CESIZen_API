@@ -7,7 +7,9 @@ services:
     environment:
       "VITE_API_URL": "http://localhost:8081/v1"  # URL de l'API pour le front
     depends_on:
-      - api
+      api:
+        required: true
+        condition: service_healthy
 
   api:
     build:
@@ -19,13 +21,18 @@ services:
     environment:
       DB_HOST: db
       DB_PORT: ${DB_PORT}
+      GIN_MODE: development
+    volumes:
+      - .:/app
+    working_dir: /app
     env_file:
       - .env
     depends_on:
-      - db
+      db:
+        required: true
+        condition: service_healthy
     networks:
       - db # Utiliser le réseau de la base de données pour la communication
-
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:8080/v1/version || exit 1" ]
       interval: 10s
@@ -44,10 +51,10 @@ services:
     networks:
       - db # Utiliser le réseau de la base de données pour la communication
     healthcheck:
-        test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
-        interval: 10s
-        timeout: 5s
-        retries: 5
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   db_local:
