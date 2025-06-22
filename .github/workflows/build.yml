@@ -11,6 +11,20 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: root
+          POSTGRES_PASSWORD: 123456
+          POSTGRES_DB: testing
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
 
@@ -29,18 +43,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
-      - name: Go Vet (sans prisma)
-        run: |
-          for pkg in $(go list ./... | grep -v '^internal/database/prisma/db$'); do
-            echo "Running go vet on $pkg"
-            go vet "$pkg"
-          done
+      - name: Use example .env
+        run: cp .env.test .env
 
-      - name: Install golint
-        run: go install golang.org/x/lint/golint@latest
+      - name: Generate Prisma Client Go
+        run: go run github.com/steebchen/prisma-client-go generate --schema internal/database/prisma/schema.prisma
 
-      - name: Run golint
-        run: golint ./...
+      - name: Go Vet
+        run: go vet ./...
 
   test:
     name: Test
@@ -85,8 +95,14 @@ jobs:
     - name: Generate Prisma Client Go
       run: go run github.com/steebchen/prisma-client-go db push --schema internal/database/prisma/schema.prisma
 
-    - name: Test
-      run: go test -v ./...
+    - name: Run tests with coverage
+      run: go test -v -coverprofile=coverage.out ./...
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        files: ./coverage.out
+
   build-docker:
     name: Build Docker Image
     needs: [lint, test]
@@ -112,7 +128,7 @@ jobs:
 
       - name: Set image tags
         run: |
-          if [ "${{ env.NODE_ENV }}" = "production" ]; then
+          if [ "${{ env.GIN_MODE }}" = "release" ]; then
             echo "TAG=latest" >> $GITHUB_ENV
             echo "VERSION=prod-${{ steps.vars.outputs.SHORT_SHA }}" >> $GITHUB_ENV
           else
@@ -141,7 +157,7 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}
 
           build-args: |
-            GIN_MODE=${{ env.ENV_NAME }}
+            GIN_MODE=${{ env.GIN_MODE }}
             VERSION=${{ env.VERSION }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
