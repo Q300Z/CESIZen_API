@@ -8,24 +8,10 @@ on:
     branches: [ "main","dev" ]
 
 jobs:
-  test:
-      runs-on: ubuntu-latest
-      services:
-        postgres:
-          image: postgres:16
-          env:
-            POSTGRES_USER: root
-            POSTGRES_PASSWORD: 123456
-            POSTGRES_DB: testing
-          ports:
-            - 5432:5432
-          options: >-
-            --health-cmd pg_isready
-            --health-interval 10s
-            --health-timeout 5s
-            --health-retries 5
-
-      steps:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
       - uses: actions/checkout@v4
 
       - name: Set up Go
@@ -33,25 +19,79 @@ jobs:
         with:
           go-version: '1.24.2'
 
-      - name: Use example .env
-        run: cp .env.test .env
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
 
-      - name: Generate Prisma Client Go
-        run: go run github.com/steebchen/prisma-client-go db push --schema internal/database/prisma/schema.prisma
+      - name: Go Vet
+        run: go vet ./...
 
-      - name: Test
-        run: go test -v ./...
+      - name: Install golint
+        run: go install golang.org/x/lint/golint@latest
+
+      - name: Run golint
+        run: golint ./...
+
+  test:
+    name: Test
+    needs: lint
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: root
+          POSTGRES_PASSWORD: 123456
+          POSTGRES_DB: testing
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.24.2'
+
+    - name: Cache Go modules
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: Use example .env
+      run: cp .env.test .env
+
+    - name: Generate Prisma Client Go
+      run: go run github.com/steebchen/prisma-client-go db push --schema internal/database/prisma/schema.prisma
+
+    - name: Test
+      run: go test -v ./...
   build-docker:
     name: Build Docker Image
-    needs: test
+    needs: [lint, test]
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-
     env:
-      NODE_ENV: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
-      TAG: ${{ github.ref == 'refs/heads/main' && 'latest' || 'dev' }}
+      GIN_MODE: ${{ github.ref == 'refs/heads/main' && 'release' || 'development' }}
       REGISTRY: ghcr.io
       IMAGE_NAME: q300z/cesizen-api
 
@@ -61,6 +101,18 @@ jobs:
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
+
+      - name: Get short commit SHA
+        id: vars
+        run: echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Set image tags
+        run: |
+          if [ "${{ env.ENV_NAME }}" = "production" ]; then
+            echo "TAGS=latest,prod-${{ steps.vars.outputs.SHORT_SHA }}" >> $GITHUB_ENV
+          else
+            echo "TAGS=dev,dev-${{ steps.vars.outputs.SHORT_SHA }}" >> $GITHUB_ENV
+          fi
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -78,13 +130,15 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG }}
-          build-args: NODE_ENV=${{ env.NODE_ENV }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$(echo ${{ env.TAGS }} | cut -d',' -f1)
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$(echo ${{ env.TAGS }} | cut -d',' -f2)
+
+          build-args: |
+            GIN_MODE=${{ env.ENV_NAME }}
+            VERSION=$(echo ${{ env.TAGS }} | cut -d',' -f2)
           cache-from: type=gha
-
-
-      - name: Image pushed successfully
-        run: echo "✅ Image ${{ env.TAG }} pushed to ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+          cache-to: type=gha,mode=max
 
 
     

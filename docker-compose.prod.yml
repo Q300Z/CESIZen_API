@@ -1,0 +1,75 @@
+services:
+  front:
+    image: ghcr.io/q300z/cesizen-vue:latest
+    container_name: front-prod
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"  # Activer Traefik pour ce service
+      - "traefik.http.routers.front.rule=Host(`cesizen.qalpuch.cc`)"  # Règle de routage pour le service front
+      - "traefik.http.routers.front.entrypoints=websecure"  # Utiliser le point d'entrée HTTPS
+      - "traefik.http.routers.front.tls.certresolver=cloudflare"  # Utiliser le résolveur de certificats Cloudflare
+      - "traefik.http.services.front.loadbalancer.server.port=80"  # Port interne du service front
+    environment:
+      "VITE_API_URL": "https://cesizen-api.qalpuch.cc/v1"  # URL de l'API pour le front
+    depends_on:
+      api:
+        required: true
+        condition: service_healthy
+    networks:
+      - traefik  # Utiliser le réseau Traefik pour la communication entre les services
+
+  api:
+    image: ghcr.io/q300z/cesizen-api:latest
+    container_name: api-prod
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"  # Activer Traefik pour ce service
+      - "traefik.http.routers.api.rule=Host(`cesizen-api.qalpuch.cc`)"  # Règle de routage pour le service front
+      - "traefik.http.routers.api.entrypoints=websecure"  # Utiliser le point d'entrée HTTPS
+      - "traefik.http.routers.api.tls.certresolver=cloudflare"  # Utiliser le résolveur de certificats Cloudflare
+      - "traefik.http.services.api.loadbalancer.server.port=8080"  # Port interne du service API
+      - "traefik.docker.network=traefik"  # Spécifier le réseau Traefik pour ce service
+    environment:
+      DB_HOST: db
+      DB_PORT: ${DB_PORT}
+    env_file:
+      - .env.prod
+    depends_on:
+      db:
+        required: true
+        condition: service_healthy
+    networks:
+      - traefik  # Utiliser le réseau Traefik pour la communication entre les services
+      - db # Utiliser le réseau de la base de données pour la communication
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f https://cesizen-api.qalpuch.cc/v1/version || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  db:
+    image: postgres:17.5-alpine3.22
+    container_name: db-prod
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - db_prod:/var/lib/postgresql/data
+    networks:
+      - db # Utiliser le réseau de la base de données pour la communication
+    healthcheck:
+        test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+        interval: 10s
+        timeout: 5s
+        retries: 5
+volumes:
+  db_prod:
+    driver: local
+
+networks:
+  db:
+    name: db-prod
+  traefik:
+    external: true
