@@ -31,9 +31,10 @@ jobs:
 
       - name: Go Vet (sans prisma)
         run: |
-          find . -type f -name '*.go' \
-            -not -path './internal/database/prisma/db/*' \
-            -exec go vet {} +
+          for pkg in $(go list ./... | grep -v '^internal/database/prisma/db$'); do
+            echo "Running go vet on $pkg"
+            go vet "$pkg"
+          done
 
       - name: Install golint
         run: go install golang.org/x/lint/golint@latest
