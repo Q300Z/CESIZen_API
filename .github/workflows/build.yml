@@ -11,20 +11,6 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: root
-          POSTGRES_PASSWORD: 123456
-          POSTGRES_DB: testing
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
     steps:
       - uses: actions/checkout@v4
 
@@ -109,7 +95,7 @@ jobs:
       contents: read
       packages: write
     env:
-      GIN_MODE: ${{ github.ref == 'refs/heads/main' && 'release' || 'development' }}
+      GIN_MODE: ${{ github.ref == 'refs/heads/main' && 'release' || 'debug' }}
       REGISTRY: ghcr.io
       IMAGE_NAME: q300z/cesizen-api
 

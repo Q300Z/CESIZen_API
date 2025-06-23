@@ -3,9 +3,7 @@ services:
     image: ghcr.io/q300z/cesizen-vue:dev
     container_name: front-local
     ports:
-      - "8080:80"  # Exposer le port 8080 pour le front
-    environment:
-      "VITE_API_URL": "http://localhost:8081/v1"  # URL de l'API pour le front
+      - "3000:80"  # Exposer le port 8080 pour le front
     depends_on:
       api:
         required: true
@@ -16,17 +14,18 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: api-local
+    command: ["./scripts/entrypoint.sh"]
     ports:
-      - "8081:8080"  # Exposer le port 8081 pour l'API
+      - "8080:8080"  # Exposer le port 8081 pour l'API
     environment:
       DB_HOST: db
       DB_PORT: ${DB_PORT}
-      GIN_MODE: development
+      GIN_MODE: debug
+#      VERSION: dev-local
     volumes:
       - .:/app
     working_dir: /app
-    env_file:
-      - .env
+    env_file: .env
     depends_on:
       db:
         required: true
@@ -46,12 +45,13 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
+    env_file: .env
     volumes:
       - db_local:/var/lib/postgresql/data
     networks:
       - db # Utiliser le réseau de la base de données pour la communication
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER}" ]
+      test: [ "CMD-SHELL", "pg_isready -d ${DB_NAME}" ]
       interval: 10s
       timeout: 5s
       retries: 5
