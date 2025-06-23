@@ -30,6 +30,7 @@ services:
     environment:
       DB_HOST: db
       DB_PORT: ${DB_PORT}
+      GIN_MODE: debug
     env_file:
       - .env.dev
     depends_on:
@@ -58,7 +59,7 @@ services:
     networks:
       - db # Utiliser le réseau de la base de données pour la communication
     healthcheck:
-        test: ["CMD-SHELL", "pg_isready -d ${DB_USER}"]
+        test: ["CMD-SHELL", "pg_isready -d ${DB_NAME}"]
         interval: 10s
         timeout: 5s
         retries: 5

@@ -1,0 +1,6 @@
+.devcontainer/
+.idea/
+logs/
+tmp/
+uploads/
+internal/database/prisma/db/
