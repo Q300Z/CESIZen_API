@@ -1,6 +1,7 @@
 services:
   traefik:
     image: traefik:v3.4.1
+    container_name: traefik
     restart: unless-stopped
     command:
       - "--log.level=DEBUG"
@@ -30,6 +31,7 @@ services:
 
   watchtower:
     image: containrrr/watchtower:1.7.1
+    container_name: watchtower
     restart: unless-stopped
     command: --interval 30 --cleanup  # Vérifier les mises à jour toutes les 30 secondes et nettoyer les images obsolètes
     volumes:

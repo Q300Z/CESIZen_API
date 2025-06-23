@@ -30,6 +30,7 @@ services:
     environment:
       DB_HOST: db
       DB_PORT: ${DB_PORT}
+      GIN_MODE: release
     env_file:
       - .env.prod
     depends_on:
