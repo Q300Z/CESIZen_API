@@ -36,6 +36,7 @@ COPY --from=builder /app/app .
 COPY --from=builder /app/scripts/entrypoint.sh .
 COPY --from=builder /app/internal/database/prisma/ ./internal/database/prisma/
 COPY --from=builder /app/go.mod /app/go.sum ./
+COPY --from=builder /app/.air.toml ./
 
 # Installer les dépendances nécessaires pour Prisma
 RUN go get github.com/steebchen/prisma-client-go
