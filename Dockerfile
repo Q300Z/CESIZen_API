@@ -9,9 +9,6 @@ RUN go mod download
 # Copier tout le projet dans l'image
 COPY . .
 
-# On supprime le Prisma Client déjà existant
-RUN rm -R internal/database/prisma/db
-
 # Générer le Prisma Client Go
 RUN go run github.com/steebchen/prisma-client-go generate --schema internal/database/prisma/schema.prisma
 
