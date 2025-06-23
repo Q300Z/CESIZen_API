@@ -44,7 +44,7 @@ services:
       test: [ "CMD-SHELL", "curl -f http://localhost:8080/v1/version || exit 1" ]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 15
 
   db:
     image: postgres:17.5-alpine3.22
