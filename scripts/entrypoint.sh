@@ -2,7 +2,7 @@
 
 echo "🔄 Waiting for the database to be ready..."
 echo "Ping database : $DB_HOST:$DB_PORT" 
-until nc -z -v -w30 $DB_HOST $DB_PORT
+until nc -z -v -w30 "$DB_HOST" "$DB_PORT"
 do
   echo "⏳ Waiting for database connection at $DB_HOST:$DB_PORT..."
   sleep 2
@@ -20,10 +20,11 @@ fi
 echo "✅ Migration completed successfully."
 
 # Check if in development mode for start with air or without air
-if [ "GIN_MODE" = "development" ]; then
+if [ "$GIN_MODE" = "debug" ]; then
   echo "🚀 Starting application with air..."
-  air
+  go install github.com/air-verse/air@latest
+  air -c .air.toml
 else
   echo "🚀 Starting application in production mode..."
-  ./main
+  ./app
 fi

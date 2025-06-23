@@ -15,13 +15,10 @@ RUN rm -R internal/database/prisma/db
 # Générer le Prisma Client Go
 RUN go run github.com/steebchen/prisma-client-go generate --schema internal/database/prisma/schema.prisma
 
-# Arguments de build
-ARG GIN_MODE
 ARG VERSION
+ENV VERSION=${VERSION}
 
-# Variables d’environnement
-ENV GIN_MODE=${GIN_MODE:-release}
-ENV VERSION=${VERSION:-undefined}
+RUN echo $VERSION >> VERSION
 
 # Compiler l'application Go (optimisation avec -ldflags pour la taille de l'image)
 RUN go build -ldflags "-s -w" -o app cmd/main.go
@@ -30,8 +27,7 @@ FROM golang:1.24.2-alpine
 
 LABEL org.opencontainers.image.source=https://github.com/Q300Z/CESIZen_API
 
-# Installer les certificats SSL nécessaires
-RUN apk --no-cache add ca-certificates
+RUN apk --no-cache add curl
 
 WORKDIR /root/
 
@@ -53,7 +49,7 @@ ARG VERSION
 
 # Variables d’environnement
 ENV GIN_MODE=${GIN_MODE:-release}
-ENV VERSION=${VERSION:-undefined}
+ENV VERSION=${VERSION}
 
 EXPOSE 8080
 

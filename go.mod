@@ -11,6 +11,7 @@ require (
 	github.com/shopspring/decimal v1.4.0
 	github.com/steebchen/prisma-client-go v0.47.0
 	golang.org/x/crypto v0.37.0
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
 
 require (

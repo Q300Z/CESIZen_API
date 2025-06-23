@@ -24,19 +24,34 @@ func init() {
 }
 
 func main() {
-	// Initialisation de Gin
-	r := gin.Default()
-
-	if utils.GetEnv("GIN_MODE", "debug") == "release" {
+	mode := utils.GetEnv("GIN_MODE", "debug")
+	switch mode {
+	case "release":
 		gin.SetMode(gin.ReleaseMode)
+	case "test":
+		gin.SetMode(gin.TestMode)
+	default:
+		gin.SetMode(gin.DebugMode)
 	}
-	// Variables app
-	appHost := utils.GetEnv("APP_HOST", "localhost")
-	appPort := utils.GetEnvAsInt("APP_PORT", 8080)
-	// Paramétrage du CORS Policy
+
+	// Initialisation du moteur Gin
+	r := gin.New()
+	r.Use(gin.Recovery())
+	r.TrustedPlatform = gin.PlatformCloudflare
+
+	// Configuration du log
+	utils.SetupLogger(mode)
+
+	// Configuration CORS
 	config := cors.DefaultConfig()
-	//config.AllowOrigins = []string{"http://localhost:3000", "http://127.0.0.1:3000"}
-	config.AllowAllOrigins = true
+	if mode == "release" || mode == "test" {
+		config.AllowOrigins = []string{
+			"https://cesizen.qalpuch.cc",
+			"https://cesizen-dev.qalpuch.cc",
+		}
+	} else {
+		config.AllowAllOrigins = true
+	}
 	config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
 	config.AllowHeaders = []string{"Origin", "Content-Type", "Accept", "Authorization"}
 	config.AllowPrivateNetwork = true
@@ -44,23 +59,33 @@ func main() {
 
 	// Initialisation du service manager
 	servicesManager := services.NewServiceManager()
-	// Initialisation des routes
+
+	// Déclaration des routes
 	routes.GetRoutes(r, servicesManager)
 
-	err := r.Run(appHost + ":" + strconv.Itoa(appPort))
-	if err != nil {
-		log.Fatal("Unable to start server on port "+strconv.Itoa(appPort), err)
-	}
+	// Configuration de l'hôte et du port
+	appHost := utils.GetEnv("APP_HOST", "0.0.0.0")
+	appPort := utils.GetEnvAsInt("APP_PORT", 8080)
+	address := appHost + ":" + strconv.Itoa(appPort)
 
-	// Gestion des signaux pour arrêt propre
+	// Gestion des signaux système
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
+	// Démarrage du serveur Gin dans une goroutine
 	go func() {
-		<-quit
-		log.Println("Arrêt du serveur...")
-
-		// Déconnexion propre de Prisma
-		servicesManager.Disconnect()
+		log.Println("🚀 Démarrage du serveur sur", address)
+		if err := r.Run(address); err != nil {
+			log.Fatalf("Erreur lors du démarrage du serveur : %v", err)
+		}
 	}()
+
+	// Blocage jusqu'à réception du signal d'arrêt
+	<-quit
+	log.Println("🛑 Signal d'arrêt reçu, arrêt du serveur...")
+
+	// Déconnexion des services
+	servicesManager.Disconnect()
+
+	log.Println("✅ Serveur arrêté proprement")
 }
