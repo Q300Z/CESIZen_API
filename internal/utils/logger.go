@@ -39,5 +39,6 @@ func SetupLogger(env string) {
 	// Ecrire dans stdout + fichier log
 	multiWriter := io.MultiWriter(os.Stdout, logWriter)
 	gin.DefaultWriter = multiWriter
+	gin.DefaultErrorWriter = multiWriter
 	log.SetOutput(multiWriter)
 }

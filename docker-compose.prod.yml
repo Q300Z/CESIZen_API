@@ -33,6 +33,9 @@ services:
       GIN_MODE: release
     env_file:
       - .env.prod
+    volumes:
+      - ./logs:/app/logs
+      - ./uploads:/app/uploads
     depends_on:
       db:
         required: true

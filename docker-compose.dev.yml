@@ -33,6 +33,9 @@ services:
       GIN_MODE: debug
     env_file:
       - .env.dev
+    volumes:
+      - ./logs:/app/logs
+      - ./uploads:/app/uploads
     depends_on:
       db:
         required: true
