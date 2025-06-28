@@ -36,9 +36,16 @@ func SetupLogger(env string) {
 		Compress:   true,
 	}
 
-	// Ecrire dans stdout + fichier log
-	multiWriter := io.MultiWriter(os.Stdout, logWriter)
-	gin.DefaultWriter = multiWriter
-	gin.DefaultErrorWriter = multiWriter
-	log.SetOutput(multiWriter)
+	// Deux writers : un pour les logs normaux, un pour les erreurs
+	infoWriter := io.MultiWriter(os.Stdout, logWriter)
+	errorWriter := io.MultiWriter(os.Stderr, logWriter)
+
+	// Gin log des requêtes HTTP (GET, POST, etc.)
+	gin.DefaultWriter = infoWriter
+
+	// Gin log des erreurs HTTP et panics
+	gin.DefaultErrorWriter = errorWriter
+
+	// Tes propres logs (log.Println, log.Fatalf, etc.)
+	log.SetOutput(infoWriter)
 }

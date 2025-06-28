@@ -24,9 +24,10 @@ FROM golang:1.24.2-alpine
 
 LABEL org.opencontainers.image.source=https://github.com/Q300Z/CESIZen_API
 
+
 RUN apk --no-cache add curl
 
-WORKDIR /root/
+WORKDIR /app
 
 # Copier l'application compilée depuis l'étape builder
 COPY --from=builder /app/app .
@@ -40,6 +41,18 @@ RUN go get github.com/steebchen/prisma-client-go
 
 # On rend executable entrypoint.sh
 RUN chmod +x entrypoint.sh
+
+
+
+# Configurer l'utilisateur pour éviter les problèmes de permission
+RUN addgroup -S -g 1000 cesizen && adduser -S -u 1000 -G cesizen cesizen
+
+
+# On configure les permissions pour l'utilisateur non-root
+RUN chown -R cesizen:cesizen /app
+
+# Passer à l'utilisateur non-root
+USER cesizen
 
 # Arguments de build
 ARG GIN_MODE

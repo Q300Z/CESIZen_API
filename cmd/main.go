@@ -34,13 +34,13 @@ func main() {
 		gin.SetMode(gin.DebugMode)
 	}
 
-	// Initialisation du moteur Gin
-	r := gin.New()
-	r.Use(gin.Recovery())
-	r.TrustedPlatform = gin.PlatformCloudflare
-
 	// Configuration du log
 	utils.SetupLogger(mode)
+
+	// Initialisation du moteur Gin
+	r := gin.New()
+	r.Use(gin.Recovery(), gin.Logger())
+	r.TrustedPlatform = gin.PlatformCloudflare
 
 	// Configuration CORS
 	config := cors.DefaultConfig()

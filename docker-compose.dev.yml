@@ -45,8 +45,8 @@ services:
       - db # Utiliser le réseau de la base de données pour la communication
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/v1/version || exit 1"]
-      interval: 10s
-      timeout: 5s
+      interval: 30s
+      timeout: 10s
       retries: 15
 
   db:

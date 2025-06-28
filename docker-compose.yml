@@ -20,9 +20,11 @@ services:
     environment:
       DB_HOST: db
       DB_PORT: ${DB_PORT}
-      GIN_MODE: debug
-#      VERSION: dev-local
+      GIN_MODE: release
+      VERSION: dev-local
     volumes:
+      - ./logs:/app/logs
+      - ./uploads:/app/uploads
       - .:/app
     working_dir: /app
     env_file: .env
