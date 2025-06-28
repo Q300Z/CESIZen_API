@@ -29,6 +29,14 @@ RUN apk --no-cache add curl
 
 WORKDIR /app
 
+# Arguments de build
+ARG GIN_MODE
+ARG VERSION
+
+# Variables d’environnement
+ENV GIN_MODE=${GIN_MODE:-release}
+ENV VERSION=${VERSION}
+
 # Copier l'application compilée depuis l'étape builder
 COPY --from=builder /app/app .
 COPY --from=builder /app/scripts/entrypoint.sh .
@@ -42,7 +50,10 @@ RUN go get github.com/steebchen/prisma-client-go
 # On rend executable entrypoint.sh
 RUN chmod +x entrypoint.sh
 
-
+RUN sh -c 'if [ "$GIN_MODE" != "release" ]; then \
+    echo "🛠 Installing air (dev mode)..." && \
+    go install github.com/air-verse/air@latest; \
+fi'
 
 # Configurer l'utilisateur pour éviter les problèmes de permission
 RUN addgroup -S -g 1000 cesizen && adduser -S -u 1000 -G cesizen cesizen
@@ -53,14 +64,6 @@ RUN chown -R cesizen:cesizen /app
 
 # Passer à l'utilisateur non-root
 USER cesizen
-
-# Arguments de build
-ARG GIN_MODE
-ARG VERSION
-
-# Variables d’environnement
-ENV GIN_MODE=${GIN_MODE:-release}
-ENV VERSION=${VERSION}
 
 EXPOSE 8080
 

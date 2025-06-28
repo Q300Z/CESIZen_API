@@ -22,7 +22,6 @@ echo "✅ Migration completed successfully."
 # Check if in development mode for start with air or without air
 if [ "$GIN_MODE" = "debug" ]; then
   echo "🚀 Starting application with air..."
-  go install github.com/air-verse/air@latest
   air -c .air.toml
 else
   echo "🚀 Starting application in production mode..."
