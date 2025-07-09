@@ -30,7 +30,7 @@ services:
     env_file: .env.prod
     volumes:
       - ./logs:/app/logs
-      - ./uploads:/app/uploads
+      - ./uploads/prod:/app/uploads
     depends_on:
       cz-db-prod:
         required: true

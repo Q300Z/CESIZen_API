@@ -30,7 +30,7 @@ services:
     env_file: .env.dev
     volumes:
       - ./logs:/app/logs
-      - ./uploads:/app/uploads
+      - ./uploads/dev:/app/uploads
     depends_on:
       cz-db-dev:
         required: true
