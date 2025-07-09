@@ -27,12 +27,7 @@ services:
       - "traefik.http.routers.cz-api-dev.tls.certresolver=cloudflare"  # Utiliser le résolveur de certificats Cloudflare
       - "traefik.http.services.cz-api-dev.loadbalancer.server.port=8080"  # Port interne du service API
       - "traefik.docker.network=traefik"  # Spécifier le réseau Traefik pour ce service
-    environment:
-      DB_HOST: cz-db-dev
-      DB_PORT: ${DB_PORT}
-      GIN_MODE: debug
-    env_file:
-      - .env.dev
+    env_file: .env.dev
     volumes:
       - ./logs:/app/logs
       - ./uploads:/app/uploads
@@ -53,10 +48,7 @@ services:
     image: postgres:17.5-alpine3.22
     container_name: cz-db-dev
     restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
+    env_file: .env.dev
     volumes:
       - cz_db_dev:/var/lib/postgresql/data
     networks:
