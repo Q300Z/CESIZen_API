@@ -1,4 +1,4 @@
-FROM golang:1.24.2-alpine AS builder
+FROM golang:1.24.4-alpine AS builder
 
 WORKDIR /app
 
@@ -20,7 +20,7 @@ RUN echo $VERSION >> VERSION
 # Compiler l'application Go (optimisation avec -ldflags pour la taille de l'image)
 RUN go build -ldflags "-s -w" -o app cmd/main.go
 
-FROM golang:1.24.2-alpine
+FROM golang:1.24.4-alpine
 
 LABEL org.opencontainers.image.source=https://github.com/Q300Z/CESIZen_API
 

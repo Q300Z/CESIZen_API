@@ -48,6 +48,7 @@ func main() {
 		config.AllowOrigins = []string{
 			"https://cesizen.qalpuch.cc",
 			"https://cesizen-dev.qalpuch.cc",
+			"http://localhost",
 		}
 	} else {
 		config.AllowAllOrigins = true

@@ -4,7 +4,7 @@ services:
     container_name: traefik
     restart: unless-stopped
     command:
-      - "--log.level=DEBUG"
+#      - "--log.level=DEBUG"
       - "--providers.docker=true"  # Activer le provider Docker
       - "--providers.docker.exposedbydefault=false" # Ne pas exposer les conteneurs par défaut
       - "--entrypoints.web.address=:80"  # Définir le point d'entrée pour le trafic HTTP

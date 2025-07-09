@@ -1,34 +1,34 @@
 services:
-  front:
+  cz-front-dev:
     image: ghcr.io/q300z/cesizen-vue:dev
-    container_name: front-dev
+    container_name: cz-front-dev
     restart: unless-stopped
     labels:
       - "traefik.enable=true"  # Activer Traefik pour ce service
-      - "traefik.http.routers.front.rule=Host(`cesizen-dev.qalpuch.cc`)"  # Règle de routage pour le service front
-      - "traefik.http.routers.front.entrypoints=websecure"  # Utiliser le point d'entrée HTTPS
-      - "traefik.http.routers.front.tls.certresolver=cloudflare"  # Utiliser le résolveur de certificats Cloudflare
-      - "traefik.http.services.front.loadbalancer.server.port=80"  # Port interne du service front
+      - "traefik.http.routers.cz-front-dev.rule=Host(`cesizen-dev.qalpuch.cc`)"  # Règle de routage pour le service front
+      - "traefik.http.routers.cz-front-dev.entrypoints=websecure"  # Utiliser le point d'entrée HTTPS
+      - "traefik.http.routers.cz-front-dev.tls.certresolver=cloudflare"  # Utiliser le résolveur de certificats Cloudflare
+      - "traefik.http.services.cz-front-dev.loadbalancer.server.port=80"  # Port interne du service front
     depends_on:
-      api:
+      cz-api-dev:
         required: true
         condition: service_healthy
     networks:
       - traefik  # Utiliser le réseau Traefik pour la communication entre les services
 
-  api:
+  cz-api-dev:
     image: ghcr.io/q300z/cesizen-api:dev
-    container_name: api-dev
+    container_name: cz-api-dev
     restart: unless-stopped
     labels:
       - "traefik.enable=true"  # Activer Traefik pour ce service
-      - "traefik.http.routers.api.rule=Host(`cesizen-api-dev.qalpuch.cc`)"  # Règle de routage pour le service front
-      - "traefik.http.routers.api.entrypoints=websecure"  # Utiliser le point d'entrée HTTPS
-      - "traefik.http.routers.api.tls.certresolver=cloudflare"  # Utiliser le résolveur de certificats Cloudflare
-      - "traefik.http.services.api.loadbalancer.server.port=8080"  # Port interne du service API
+      - "traefik.http.routers.cz-api-dev.rule=Host(`cesizen-api-dev.qalpuch.cc`)"  # Règle de routage pour le service front
+      - "traefik.http.routers.cz-api-dev.entrypoints=websecure"  # Utiliser le point d'entrée HTTPS
+      - "traefik.http.routers.cz-api-dev.tls.certresolver=cloudflare"  # Utiliser le résolveur de certificats Cloudflare
+      - "traefik.http.services.cz-api-dev.loadbalancer.server.port=8080"  # Port interne du service API
       - "traefik.docker.network=traefik"  # Spécifier le réseau Traefik pour ce service
     environment:
-      DB_HOST: db
+      DB_HOST: cz-db-dev
       DB_PORT: ${DB_PORT}
       GIN_MODE: debug
     env_file:
@@ -37,30 +37,30 @@ services:
       - ./logs:/app/logs
       - ./uploads:/app/uploads
     depends_on:
-      db:
+      cz-db-dev:
         required: true
         condition: service_healthy
     networks:
       - traefik  # Utiliser le réseau Traefik pour la communication entre les services
-      - db # Utiliser le réseau de la base de données pour la communication
+      - cz-db-dev # Utiliser le réseau de la base de données pour la communication
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/v1/version || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 15
 
-  db:
+  cz-db-dev:
     image: postgres:17.5-alpine3.22
-    container_name: db-dev
+    container_name: cz-db-dev
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     volumes:
-      - db_dev:/var/lib/postgresql/data
+      - cz_db_dev:/var/lib/postgresql/data
     networks:
-      - db # Utiliser le réseau de la base de données pour la communication
+      - cz-db-dev # Utiliser le réseau de la base de données pour la communication
     healthcheck:
         test: ["CMD-SHELL", "pg_isready -d ${DB_NAME}"]
         interval: 10s
@@ -68,11 +68,11 @@ services:
         retries: 5
 
 volumes:
-  db_dev:
+  cz_db_dev:
     driver: local
 
 networks:
-  db:
-    name: db-dev
+  cz-db-dev:
+    name: cz-db-dev
   traefik:
     external: true

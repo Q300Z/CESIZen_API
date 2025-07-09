@@ -1,24 +1,24 @@
 services:
-  front:
+  cz-front-local:
     image: ghcr.io/q300z/cesizen-vue:dev
-    container_name: front-local
+    container_name: cz-front-local
     ports:
       - "3000:80"  # Exposer le port 8080 pour le front
     depends_on:
-      api:
+      cz-api-local:
         required: true
         condition: service_healthy
 
-  api:
+  cz-api-local:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: api-local
+    container_name: cz-api-local
     command: ["./scripts/entrypoint.sh"]
     ports:
       - "8080:8080"  # Exposer le port 8081 pour l'API
     environment:
-      DB_HOST: db
+      DB_HOST: cz-db-local
       DB_PORT: ${DB_PORT}
       GIN_MODE: release
       VERSION: dev-local
@@ -29,29 +29,29 @@ services:
     working_dir: /app
     env_file: .env
     depends_on:
-      db:
+      cz-api-local:
         required: true
         condition: service_healthy
     networks:
-      - db # Utiliser le réseau de la base de données pour la communication
+      - cz-api-local # Utiliser le réseau de la base de données pour la communication
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:8080/v1/version || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  db:
+  cz-db-local:
     image: postgres:17.5-alpine3.22
-    container_name: db-local
+    container_name: cz-db-local
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     env_file: .env
     volumes:
-      - db_local:/var/lib/postgresql/data
+      - cz_db_local:/var/lib/postgresql/data
     networks:
-      - db # Utiliser le réseau de la base de données pour la communication
+      - cz-db-local # Utiliser le réseau de la base de données pour la communication
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -d ${DB_NAME}" ]
       interval: 10s
@@ -59,9 +59,9 @@ services:
       retries: 5
 
 volumes:
-  db_local:
+  cz_db_local:
     driver: local
 
 networks:
-  db:
-    name: db-local
+  cz_db_local:
+    name: cz_db_local
